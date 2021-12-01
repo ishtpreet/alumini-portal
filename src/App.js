@@ -9,6 +9,7 @@ import './App.css';
 import Dashboard from './Dashboard';
 import Header from './Header'
 import Profile from './Profile';
+import Landing from './Landing'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
     <Route path="/login" component={Login} />
     <Route path="/dashboard" component={Dashboard} />
     <Route path="/profile" component={Profile} />
+    <Route path="/" exact component={Landing} />
     </Container>
       </AuthProvider>
       </Switch>
