@@ -1,7 +1,8 @@
 import React, {useState} from 'react'
 import DatePicker from 'react-date-picker';
-import {Button, Card, Container, Row, Col, Alert, Spinner} from  'react-bootstrap'
+import {Button, Card, Container, Row, Col, Alert, Spinner, Toast} from  'react-bootstrap'
 import firebase from 'firebase'
+import {useCollectionData} from 'react-firebase-hooks/firestore'
 
 import {firestore} from './Services/firebase'
 
@@ -11,39 +12,57 @@ export default function StudentDashboard(props) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState();
     const [success, setSuccess] = useState();
-    console.log(new Date())
+    const [show, setShow] = useState(false);
+    // console.log(new Date())
     var maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 7);
+    var appointmentCount = 0;
     const appointmentRef = firestore.collection('appointments')
-
+    const [appointmentDetails, isLoading] = useCollectionData(appointmentRef.where("approverAction","==",false).orderBy('createdAt','desc'), {idField: 'id'})
+    const [appointmentDetails2] = useCollectionData(appointmentRef, {idField: 'id'})
+    if(appointmentDetails2){
+        appointmentDetails2.forEach((appointment) => {
+            if(appointment.bookedBy === props.studentName){
+                appointmentCount++
+            }
+        })
+    }
+    // console.log(appointmentDetails)
+    // console.log(err)
     const onChangeAppointmentTime = (e) =>{
         setAppointmentTime(e.target.value)
     }
     const bookAppointment = async (e) => {
         e.preventDefault();
         if(!appointmentTime){
-            console.log(appointmentDate, appointmentTime)
+            // console.log(appointmentDate.toDateString, appointmentTime)
             setError("All Fields are required")
             return
         }
         setError(null)
         setLoading(true)
         await appointmentRef.add({
-            date: appointmentDate,
+            date: appointmentDate.toJSON().slice(0,10).replace(/-/g,'/'),
             timeSlot: appointmentTime,
-            student: props.studentName,
+            bookedBy: props.studentName,
             approved: false,
+            approverAction: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         })
+        setShow(true)
         setLoading(false)
         setSuccess("Appointment booked successfully")
-        console.log("Date",appointmentDate)
-        console.log("Time",appointmentTime)
     }
     return (
         <Container>
             <Row>
                 <Col>
+                <Toast bg="success" onClose={() => setShow(false)} show={show} delay={3000} autohide>
+                    <Toast.Body>Appointment Booked Successfully</Toast.Body>
+                    </Toast>
+                {isLoading ? <Spinner animation="border" style={{alignSelf: "center" }} /> : 
+                (appointmentDetails && appointmentDetails.length > 0) ? <Alert style={{marginLeft: "25px", marginRight:"25px"}} variant="warning">Appointment Booking under approval. Please check by later</Alert> : (
+                    (appointmentCount >= 2) ? <Alert style={{marginLeft: "25px", marginRight:"25px"}} variant="danger">You have reached the maximum number a student can book an appointment.</Alert> :
                     <Card bg="dark"> 
                         <Card.Header>
                             <h3>Book Appointment</h3>
@@ -79,6 +98,7 @@ export default function StudentDashboard(props) {
             </form>
                         </Card.Body>    
                     </Card>
+                )}
                 </Col>
             </Row>
         </Container>

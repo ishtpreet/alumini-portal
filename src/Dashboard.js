@@ -18,7 +18,8 @@ export default function Dashboard() {
         history.push("/login")
     return (
     <>
-    {isAlumini ? <AluminiDashboard /> : <StudentDashboard studentName={currentUser.displayName} />}
+    {currentUser &&   (!isAlumini ? <StudentDashboard studentName={currentUser.displayName} /> : <AluminiDashboard />)
+    }
     </>
     )
 }
